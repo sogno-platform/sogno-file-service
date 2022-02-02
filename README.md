@@ -1,2 +1,2 @@
-# file-service
-Service to store static grid data like CGMES for other SOGNO services
+# SOGNO file-service
+This service stores static grid data, like CIM CGMES network descriptions, for other SOGNO services.
