@@ -1,0 +1,61 @@
+definitions:
+  api.ResponseError:
+    type: object
+  api.ResponseFile:
+    type: object
+info:
+  contact: {}
+paths:
+  /files:
+    get:
+      operationId: getFiles
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Files available
+          schema:
+            items:
+              $ref: '#/definitions/api.ResponseFile'
+            type: array
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Get all files on the server
+      tags:
+      - files
+    post:
+      consumes:
+      - multipart/form-data
+      operationId: addFile
+      parameters:
+      - description: ID of file
+        in: formData
+        name: key
+        required: true
+        type: string
+      - description: File to be uploaded
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: File that was added
+          schema:
+            $ref: '#/definitions/api.ResponseFile'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Add file
+      tags:
+      - files
+swagger: "2.0"

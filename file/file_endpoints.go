@@ -3,15 +3,76 @@
 package file
 
 import (
+	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
 func RegisterFileEndpoints(r *gin.RouterGroup) {
 	r.GET("", getFiles)
-	//r.POST("", addFile)
+	r.POST("", addFile)
 	//r.GET("/:fileID", getFile)
 	//r.PUT("/:fileID", updateFile)
 	//r.DELETE("/:fileID", deleteFile)
+}
+
+// addFile godoc
+// @Summary Add file
+// @ID addFile
+// @Tags files
+// @Produce json
+// @Accept multipart/form-data
+// @Success 200 {object} api.ResponseFile "File that was added"
+// @Failure 400 {object} api.ResponseError "Bad request"
+// @Failure 500 {object} api.ResponseError "Internal server error"
+// @Param key formData string true "ID of file"
+// @Param file formData file true "File to be uploaded"
+// @Router /files [post]
+func addFile(c *gin.Context) {
+
+	key := c.PostForm("key")
+	if key == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{
+				"code":    http.StatusBadRequest,
+				"message": "key required",
+			},
+		})
+		return
+	}
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{
+				"code":    http.StatusBadRequest,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+
+	contentType := fileHeader.Header.Get("Content-Type")
+	contentSize := fileHeader.Size
+	content, err := fileHeader.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+	content.Close()
+
+	putObject(key, content, contentSize, contentType)
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"key":          key,
+			"lastModified": "TODO",
+		},
+	})
 }
 
 // getFiles godoc
@@ -19,7 +80,7 @@ func RegisterFileEndpoints(r *gin.RouterGroup) {
 // @ID getFiles
 // @Tags files
 // @Produce json
-// @Success 200 {object} api.ResponseFiles "Files available"
+// @Success 200 {array} api.ResponseFile "Files available"
 // @Failure 500 {object} api.ResponseError "Internal server error"
 // @Router /files [get]
 func getFiles(c *gin.Context) {
