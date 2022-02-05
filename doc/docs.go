@@ -45,42 +45,38 @@ const docTemplate_swagger = `{
                 }
             },
             "post": {
-                "consumes": [
-                    "multipart/form-data"
-                ],
                 "produces": [
                     "application/json"
                 ],
                 "tags": [
                     "files"
                 ],
-                "summary": "Add file",
-                "operationId": "addFile",
+                "summary": "Get file info",
+                "operationId": "getFile",
                 "parameters": [
                     {
                         "type": "string",
                         "description": "ID of file",
                         "name": "key",
-                        "in": "formData",
-                        "required": true
-                    },
-                    {
-                        "type": "file",
-                        "description": "File to be uploaded",
-                        "name": "file",
-                        "in": "formData",
+                        "in": "path",
                         "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "File that was added",
+                        "description": "File info",
                         "schema": {
                             "$ref": "#/definitions/api.ResponseFile"
                         }
                     },
                     "400": {
                         "description": "Bad request",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
+                    "404": {
+                        "description": "File not found",
                         "schema": {
                             "$ref": "#/definitions/api.ResponseError"
                         }

@@ -15,3 +15,10 @@ $ go build
 ```bash
 go run main.go
 ```
+
+### Generating OpenAPI docs
+
+```bash
+# Ensure your Go bin directory is on your path (default: ~/go/bin)
+swag init -o doc
+```

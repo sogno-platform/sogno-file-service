@@ -11,7 +11,7 @@ import (
 func RegisterFileEndpoints(r *gin.RouterGroup) {
 	r.GET("", getFiles)
 	r.POST("", addFile)
-	//r.GET("/:fileID", getFile)
+	r.GET("/:key", getFile)
 	//r.PUT("/:fileID", updateFile)
 	//r.DELETE("/:fileID", deleteFile)
 }
@@ -66,11 +66,65 @@ func addFile(c *gin.Context) {
 	content.Close()
 
 	putObject(key, content, contentSize, contentType)
+	url, err := getObjectUrl(key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"key":          key,
 			"lastModified": "TODO",
+			"url":          url,
+		},
+	})
+}
+
+// getFile godoc
+// @Summary Get file info
+// @ID getFile
+// @Tags files
+// @Produce json
+// @Success 200 {object} api.ResponseFile "File info"
+// @Failure 400 {object} api.ResponseError "Bad request"
+// @Failure 404 {object} api.ResponseError "File not found"
+// @Failure 500 {object} api.ResponseError "Internal server error"
+// @Param key path string true "ID of file"
+// @Router /files [post]
+func getFile(c *gin.Context) {
+
+	key := c.Param("key")
+	if key == "" {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{
+				"code":    http.StatusBadRequest,
+				"message": "key required",
+			},
+		})
+		return
+	}
+	url, err := getObjectUrl(key)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"key": key,
+			"lastModified": "TODO",
+			// FIXME: Some encoding is happening which breaks the URL
+			"url":          url.String(),
 		},
 	})
 }

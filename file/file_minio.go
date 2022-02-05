@@ -6,6 +6,8 @@ import (
 	"context"
 	"io"
 	"log"
+	"net/url"
+	"time"
 
 	"github.com/minio/minio-go/v7"
 	"github.com/minio/minio-go/v7/pkg/credentials"
@@ -15,8 +17,12 @@ func minioClient() *minio.Client {
 	// TODO: Include configuration
 	endpoint := "s3.amazonaws.com"
 
-	// TODO: Chain credentials providers
-	creds := credentials.NewEnvAWS()
+	creds := credentials.NewChainCredentials(
+		[]credentials.Provider{
+			&credentials.EnvAWS{},
+			&credentials.FileAWSCredentials{},
+		},
+	)
 
 	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  creds,
@@ -31,11 +37,9 @@ func minioClient() *minio.Client {
 
 func putObject(key string, content io.Reader, contentSize int64, contentType string) error {
 
-	client := minioClient()
-
 	bucket := "TODO: get from config"
 
-	_, err := client.PutObject(
+	_, err := minioClient().PutObject(
 		context.Background(),
 		bucket,
 		key,
@@ -44,4 +48,12 @@ func putObject(key string, content io.Reader, contentSize int64, contentType str
 		minio.PutObjectOptions{ContentType: contentType},
 	)
 	return err
+}
+
+func getObjectUrl(key string) (*url.URL, error) {
+
+	bucket := "TODO: get from config"
+
+	// Generates a presigned url which expires in 7 days (max).
+	return minioClient().PresignedGetObject(context.Background(), bucket, key, time.Second*604800, make(url.Values))
 }

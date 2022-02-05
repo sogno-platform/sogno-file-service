@@ -3,7 +3,7 @@
 package api
 
 type ResponseErrorData struct {
-	code string
+	code    string
 	message string
 }
 
@@ -12,8 +12,9 @@ type ResponseError struct {
 }
 
 type ResponseFileData struct {
-	key string
+	key          string
 	lastModified string
+	url          string
 }
 
 type ResponseFile struct {
