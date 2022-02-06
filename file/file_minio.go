@@ -57,3 +57,12 @@ func getObjectUrl(key string) (*url.URL, error) {
 	// Generates a presigned url which expires in 7 days (max).
 	return minioClient().PresignedGetObject(context.Background(), bucket, key, time.Second*604800, make(url.Values))
 }
+
+func listObjects() <-chan minio.ObjectInfo {
+
+	bucket := "TODO: get from config"
+
+	return minioClient().ListObjects(context.Background(), bucket, minio.ListObjectsOptions{
+		Recursive: true,
+	})
+}

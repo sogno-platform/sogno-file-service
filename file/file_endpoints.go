@@ -4,6 +4,7 @@ package file
 
 import (
 	"net/http"
+	"net/url"
 
 	"github.com/gin-gonic/gin"
 )
@@ -138,7 +139,33 @@ func getFile(c *gin.Context) {
 // @Failure 500 {object} api.ResponseError "Internal server error"
 // @Router /files [get]
 func getFiles(c *gin.Context) {
-	c.JSON(200, gin.H{
-		"message": "pong",
+
+	var files []gin.H
+
+	for objInfo := range listObjects() {
+		var url *url.URL
+		err := objInfo.Err
+
+		if err == nil {
+			url, err = getObjectUrl(objInfo.Key)
+		}
+		if err != nil {
+			files = append(files, gin.H{
+				"error": err.Error(),
+				"key": "",
+				"lastModified": "",
+				"url": "",
+			})
+		} else {
+			files = append(files, gin.H{
+				"error": err,
+				"key": objInfo.Key,
+				"lastModified": objInfo.LastModified,
+				"url": url.String(),
+			})
+		}
+	}
+	c.JSON(http.StatusOK, gin.H{
+		"data": files,
 	})
 }
