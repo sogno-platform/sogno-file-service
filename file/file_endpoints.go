@@ -7,12 +7,13 @@ import (
 	"net/url"
 
 	"github.com/gin-gonic/gin"
+	"github.com/google/uuid"
 )
 
 func RegisterFileEndpoints(r *gin.RouterGroup) {
 	r.GET("", getFiles)
 	r.POST("", addFile)
-	r.GET("/:key", getFile)
+	r.GET("/:fileID", getFile)
 	//r.PUT("/:fileID", updateFile)
 	//r.DELETE("/:fileID", deleteFile)
 }
@@ -26,21 +27,11 @@ func RegisterFileEndpoints(r *gin.RouterGroup) {
 // @Success 200 {object} api.ResponseFile "File that was added"
 // @Failure 400 {object} api.ResponseError "Bad request"
 // @Failure 500 {object} api.ResponseError "Internal server error"
-// @Param key formData string true "ID of file"
 // @Param file formData file true "File to be uploaded"
 // @Router /files [post]
 func addFile(c *gin.Context) {
 
-	key := c.PostForm("key")
-	if key == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    http.StatusBadRequest,
-				"message": "key required",
-			},
-		})
-		return
-	}
+	fileID := uuid.New().String()
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -66,8 +57,8 @@ func addFile(c *gin.Context) {
 	}
 	content.Close()
 
-	putObject(key, content, contentSize, contentType)
-	url, err := getObjectUrl(key)
+	putObject(fileID, content, contentSize, contentType)
+	url, err := getObjectUrl(fileID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
@@ -80,9 +71,9 @@ func addFile(c *gin.Context) {
 
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"key":          key,
+			"fileID":       fileID,
 			"lastModified": "TODO",
-			"url":          url,
+			"url":          url.String(),
 		},
 	})
 }
@@ -96,21 +87,21 @@ func addFile(c *gin.Context) {
 // @Failure 400 {object} api.ResponseError "Bad request"
 // @Failure 404 {object} api.ResponseError "File not found"
 // @Failure 500 {object} api.ResponseError "Internal server error"
-// @Param key path string true "ID of file"
+// @Param fileID path string true "ID of file"
 // @Router /files [post]
 func getFile(c *gin.Context) {
 
-	key := c.Param("key")
-	if key == "" {
+	fileID := c.Param("fileID")
+	if fileID == "" {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": gin.H{
 				"code":    http.StatusBadRequest,
-				"message": "key required",
+				"message": "fileID required",
 			},
 		})
 		return
 	}
-	url, err := getObjectUrl(key)
+	url, err := getObjectUrl(fileID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
@@ -122,7 +113,7 @@ func getFile(c *gin.Context) {
 	}
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
-			"key": key,
+			"fileID":       fileID,
 			"lastModified": "TODO",
 			// FIXME: Some encoding is happening which breaks the URL
 			"url":          url.String(),
@@ -151,17 +142,17 @@ func getFiles(c *gin.Context) {
 		}
 		if err != nil {
 			files = append(files, gin.H{
-				"error": err.Error(),
-				"key": "",
+				"error":        err.Error(),
+				"fileID":       "",
 				"lastModified": "",
-				"url": "",
+				"url":          "",
 			})
 		} else {
 			files = append(files, gin.H{
-				"error": err,
-				"key": objInfo.Key,
+				"error":        err,
+				"fileID":       objInfo.Key,
 				"lastModified": objInfo.LastModified,
-				"url": url.String(),
+				"url":          url.String(),
 			})
 		}
 	}

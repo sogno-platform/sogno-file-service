@@ -30,7 +30,7 @@ paths:
       parameters:
       - description: ID of file
         in: path
-        name: key
+        name: fileID
         required: true
         type: string
       produces:

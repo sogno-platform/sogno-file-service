@@ -57,7 +57,7 @@ const docTemplate_swagger = `{
                     {
                         "type": "string",
                         "description": "ID of file",
-                        "name": "key",
+                        "name": "fileID",
                         "in": "path",
                         "required": true
                     }
