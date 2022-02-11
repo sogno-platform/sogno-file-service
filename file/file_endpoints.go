@@ -14,7 +14,7 @@ func RegisterFileEndpoints(r *gin.RouterGroup) {
 	r.GET("", getFiles)
 	r.POST("", addFile)
 	r.GET("/:fileID", getFile)
-	//r.PUT("/:fileID", updateFile)
+	r.PUT("/:fileID", updateFile)
 	//r.DELETE("/:fileID", deleteFile)
 }
 
@@ -99,19 +99,10 @@ func addFile(c *gin.Context) {
 // @Failure 404 {object} api.ResponseError "File not found"
 // @Failure 500 {object} api.ResponseError "Internal server error"
 // @Param fileID path string true "ID of file"
-// @Router /files [post]
+// @Router /files/{fileID} [get]
 func getFile(c *gin.Context) {
 
 	fileID := c.Param("fileID")
-	if fileID == "" {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    http.StatusBadRequest,
-				"message": "fileID required",
-			},
-		})
-		return
-	}
 	url, err := getObjectUrl(fileID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
@@ -137,6 +128,78 @@ func getFile(c *gin.Context) {
 			"fileID":       fileID,
 			"lastModified": info.LastModified,
 			// FIXME: Some encoding is happening which breaks the URL
+			"url": url.String(),
+		},
+	})
+}
+
+// updateFile godoc
+// @Summary Update file
+// @ID updateFile
+// @Tags files
+// @Produce json
+// @Accept multipart/form-data
+// @Success 200 {object} api.ResponseFile "File that was updated"
+// @Failure 400 {object} api.ResponseError "Bad request"
+// @Failure 500 {object} api.ResponseError "Internal server error"
+// @Param fileID path string true "ID of file"
+// @Param file formData file true "File to be uploaded"
+// @Router /files/{fileID} [put]
+func updateFile(c *gin.Context) {
+
+	fileID := c.Param("fileID")
+	fileHeader, err := c.FormFile("file")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": gin.H{
+				"code":    http.StatusBadRequest,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+
+	contentType := fileHeader.Header.Get("Content-Type")
+	contentSize := fileHeader.Size
+	content, err := fileHeader.Open()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+	content.Close()
+
+	putObject(fileID, content, contentSize, contentType)
+
+	url, err := getObjectUrl(fileID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+	info, err := statObject(fileID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{
+		"data": gin.H{
+			"fileID":       fileID,
+			"lastModified": info.LastModified,
 			"url":          url.String(),
 		},
 	})
