@@ -58,7 +58,18 @@ func addFile(c *gin.Context) {
 	content.Close()
 
 	putObject(fileID, content, contentSize, contentType)
+
 	url, err := getObjectUrl(fileID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+	info, err := statObject(fileID)
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{
 			"error": gin.H{
@@ -72,7 +83,7 @@ func addFile(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"fileID":       fileID,
-			"lastModified": "TODO",
+			"lastModified": info.LastModified,
 			"url":          url.String(),
 		},
 	})
@@ -111,10 +122,20 @@ func getFile(c *gin.Context) {
 		})
 		return
 	}
+	info, err := statObject(fileID)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"data": gin.H{
 			"fileID":       fileID,
-			"lastModified": "TODO",
+			"lastModified": info.LastModified,
 			// FIXME: Some encoding is happening which breaks the URL
 			"url":          url.String(),
 		},

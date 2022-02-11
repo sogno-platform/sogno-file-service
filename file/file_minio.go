@@ -50,6 +50,14 @@ func putObject(key string, content io.Reader, contentSize int64, contentType str
 	return err
 }
 
+func statObject(key string) (minio.ObjectInfo, error) {
+
+	bucket := "TODO: get from config"
+
+	return minioClient().StatObject(context.Background(), bucket, key, minio.StatObjectOptions{})
+
+}
+
 func getObjectUrl(key string) (*url.URL, error) {
 
 	bucket := "TODO: get from config"
