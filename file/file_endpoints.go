@@ -15,7 +15,7 @@ func RegisterFileEndpoints(r *gin.RouterGroup) {
 	r.POST("", addFile)
 	r.GET("/:fileID", getFile)
 	r.PUT("/:fileID", updateFile)
-	//r.DELETE("/:fileID", deleteFile)
+	r.DELETE("/:fileID", deleteFile)
 }
 
 // addFile godoc
@@ -203,6 +203,31 @@ func updateFile(c *gin.Context) {
 			"url":          url.String(),
 		},
 	})
+}
+
+// deleteFile godoc
+// @Summary Delete file
+// @ID deleteFile
+// @Tags files
+// @Produce json
+// @Success 200 {object} api.ResponseEmpty "Succeeds whether the file exists or not"
+// @Failure 500 {object} api.ResponseError "Internal server error"
+// @Param fileID path string true "ID of file"
+// @Router /files/{fileID} [delete]
+func deleteFile(c *gin.Context) {
+
+	err := deleteObject(c.Param("fileID"))
+
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": gin.H{
+				"code":    http.StatusInternalServerError,
+				"message": err.Error(),
+			},
+		})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"data": gin.H{}})
 }
 
 // getFiles godoc

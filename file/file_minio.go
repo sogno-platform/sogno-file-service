@@ -74,3 +74,10 @@ func listObjects() <-chan minio.ObjectInfo {
 		Recursive: true,
 	})
 }
+
+func deleteObject(key string) error {
+
+	bucket := "TODO: get from config"
+
+	return minioClient().RemoveObject(context.Background(), bucket, key, minio.RemoveObjectOptions{})
+}

@@ -20,3 +20,7 @@ type ResponseFileData struct {
 type ResponseFile struct {
 	data ResponseFileData
 }
+
+type ResponseEmpty struct {
+	data struct{}
+}
