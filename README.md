@@ -10,15 +10,15 @@ $ go mod tidy
 $ go build
 ```
 
-### Running
-
-```bash
-go run main.go
-```
-
 ### Generating OpenAPI docs
 
 ```bash
 # Ensure your Go bin directory is on your path (default: ~/go/bin)
-swag init -o doc
+swag init
+```
+
+### Running
+
+```bash
+go run main.go
 ```

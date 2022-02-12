@@ -1,0 +1,198 @@
+definitions:
+  api.ResponseEmpty:
+    description: Empty successful response
+    properties:
+      data:
+        type: object
+    required:
+    - data
+    type: object
+  api.ResponseError:
+    description: An error
+    properties:
+      error:
+        $ref: '#/definitions/api.ResponseErrorData'
+    required:
+    - error
+    type: object
+  api.ResponseErrorData:
+    properties:
+      code:
+        description: HTTP response status code
+        type: integer
+      message:
+        description: Description of the error
+        type: string
+    required:
+    - code
+    - message
+    type: object
+  api.ResponseFile:
+    description: A single file
+    properties:
+      data:
+        $ref: '#/definitions/api.ResponseFileData'
+    required:
+    - data
+    type: object
+  api.ResponseFileData:
+    properties:
+      fileID:
+        description: ID of file
+        type: string
+      lastModified:
+        description: Last modified timestamp of file
+        type: string
+      url:
+        description: URL of file
+        type: string
+    required:
+    - fileID
+    - lastModified
+    type: object
+  api.ResponseFiles:
+    description: 'Multiple files (NOTE: Partial responses are possible. In this case
+      `data` and `error` will be returned.)'
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/api.ResponseFileData'
+        type: array
+      error:
+        $ref: '#/definitions/api.ResponseErrorData'
+    type: object
+info:
+  contact: {}
+paths:
+  /files:
+    get:
+      operationId: getFiles
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Files available
+          schema:
+            $ref: '#/definitions/api.ResponseFiles'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.ResponseFiles'
+      summary: Get all files on the server
+      tags:
+      - files
+    post:
+      consumes:
+      - multipart/form-data
+      operationId: addFile
+      parameters:
+      - description: File to be uploaded
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: File that was added
+          schema:
+            $ref: '#/definitions/api.ResponseFile'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Add file
+      tags:
+      - files
+  /files/{fileID}:
+    delete:
+      operationId: deleteFile
+      parameters:
+      - description: ID of file
+        in: path
+        name: fileID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Succeeds whether the file exists or not
+          schema:
+            $ref: '#/definitions/api.ResponseEmpty'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Delete file
+      tags:
+      - files
+    get:
+      operationId: getFile
+      parameters:
+      - description: ID of file
+        in: path
+        name: fileID
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: File info
+          schema:
+            $ref: '#/definitions/api.ResponseFile'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "404":
+          description: File not found
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Get file info
+      tags:
+      - files
+    put:
+      consumes:
+      - multipart/form-data
+      operationId: updateFile
+      parameters:
+      - description: ID of file
+        in: path
+        name: fileID
+        required: true
+        type: string
+      - description: File to be uploaded
+        in: formData
+        name: file
+        required: true
+        type: file
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: File that was updated
+          schema:
+            $ref: '#/definitions/api.ResponseFile'
+        "400":
+          description: Bad request
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/api.ResponseError'
+      summary: Update file
+      tags:
+      - files
+swagger: "2.0"

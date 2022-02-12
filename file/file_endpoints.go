@@ -4,10 +4,11 @@ package file
 
 import (
 	"net/http"
-	"net/url"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+
+	"github.com/sogno-platform/file-service/api"
 )
 
 func RegisterFileEndpoints(r *gin.RouterGroup) {
@@ -34,10 +35,10 @@ func addFile(c *gin.Context) {
 	fileID := uuid.New().String()
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    http.StatusBadRequest,
-				"message": err.Error(),
+		c.JSON(http.StatusBadRequest, api.ResponseError{
+			Error: api.ResponseErrorData{
+				Code:    http.StatusBadRequest,
+				Message: err.Error(),
 			},
 		})
 		return
@@ -47,10 +48,10 @@ func addFile(c *gin.Context) {
 	contentSize := fileHeader.Size
 	content, err := fileHeader.Open()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    http.StatusInternalServerError,
-				"message": err.Error(),
+		c.JSON(http.StatusInternalServerError, api.ResponseError{
+			Error: api.ResponseErrorData{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
 			},
 		})
 		return
@@ -61,30 +62,30 @@ func addFile(c *gin.Context) {
 
 	url, err := getObjectUrl(fileID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    http.StatusInternalServerError,
-				"message": err.Error(),
+		c.JSON(http.StatusInternalServerError, api.ResponseError{
+			Error: api.ResponseErrorData{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
 			},
 		})
 		return
 	}
 	info, err := statObject(fileID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    http.StatusInternalServerError,
-				"message": err.Error(),
+		c.JSON(http.StatusInternalServerError, api.ResponseError{
+			Error: api.ResponseErrorData{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
 			},
 		})
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"fileID":       fileID,
-			"lastModified": info.LastModified,
-			"url":          url.String(),
+	c.JSON(http.StatusOK, api.ResponseFile{
+		Data: api.ResponseFileData{
+			FileID:       fileID,
+			LastModified: info.LastModified,
+			// FIXME: Some encoding is happening which breaks the URL
+			URL: url.String(),
 		},
 	})
 }
@@ -105,30 +106,30 @@ func getFile(c *gin.Context) {
 	fileID := c.Param("fileID")
 	url, err := getObjectUrl(fileID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    http.StatusInternalServerError,
-				"message": err.Error(),
+		c.JSON(http.StatusInternalServerError, api.ResponseError{
+			Error: api.ResponseErrorData{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
 			},
 		})
 		return
 	}
 	info, err := statObject(fileID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    http.StatusInternalServerError,
-				"message": err.Error(),
+		c.JSON(http.StatusInternalServerError, api.ResponseError{
+			Error: api.ResponseErrorData{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
 			},
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"fileID":       fileID,
-			"lastModified": info.LastModified,
+	c.JSON(http.StatusOK, api.ResponseFile{
+		Data: api.ResponseFileData{
+			FileID:       fileID,
+			LastModified: info.LastModified,
 			// FIXME: Some encoding is happening which breaks the URL
-			"url": url.String(),
+			URL: url.String(),
 		},
 	})
 }
@@ -150,10 +151,10 @@ func updateFile(c *gin.Context) {
 	fileID := c.Param("fileID")
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": gin.H{
-				"code":    http.StatusBadRequest,
-				"message": err.Error(),
+		c.JSON(http.StatusBadRequest, api.ResponseError{
+			Error: api.ResponseErrorData{
+				Code:    http.StatusBadRequest,
+				Message: err.Error(),
 			},
 		})
 		return
@@ -163,10 +164,10 @@ func updateFile(c *gin.Context) {
 	contentSize := fileHeader.Size
 	content, err := fileHeader.Open()
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    http.StatusInternalServerError,
-				"message": err.Error(),
+		c.JSON(http.StatusInternalServerError, api.ResponseError{
+			Error: api.ResponseErrorData{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
 			},
 		})
 		return
@@ -177,30 +178,30 @@ func updateFile(c *gin.Context) {
 
 	url, err := getObjectUrl(fileID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    http.StatusInternalServerError,
-				"message": err.Error(),
+		c.JSON(http.StatusInternalServerError, api.ResponseError{
+			Error: api.ResponseErrorData{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
 			},
 		})
 		return
 	}
 	info, err := statObject(fileID)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    http.StatusInternalServerError,
-				"message": err.Error(),
+		c.JSON(http.StatusInternalServerError, api.ResponseError{
+			Error: api.ResponseErrorData{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
 			},
 		})
 		return
 	}
-
-	c.JSON(http.StatusOK, gin.H{
-		"data": gin.H{
-			"fileID":       fileID,
-			"lastModified": info.LastModified,
-			"url":          url.String(),
+	c.JSON(http.StatusOK, api.ResponseFile{
+		Data: api.ResponseFileData{
+			FileID:       fileID,
+			LastModified: info.LastModified,
+			// FIXME: Some encoding is happening which breaks the URL
+			URL: url.String(),
 		},
 	})
 }
@@ -219,15 +220,15 @@ func deleteFile(c *gin.Context) {
 	err := deleteObject(c.Param("fileID"))
 
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{
-			"error": gin.H{
-				"code":    http.StatusInternalServerError,
-				"message": err.Error(),
+		c.JSON(http.StatusInternalServerError, api.ResponseError{
+			Error: api.ResponseErrorData{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
 			},
 		})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"data": gin.H{}})
+	c.JSON(http.StatusOK, api.ResponseEmpty{})
 }
 
 // getFiles godoc
@@ -235,37 +236,33 @@ func deleteFile(c *gin.Context) {
 // @ID getFiles
 // @Tags files
 // @Produce json
-// @Success 200 {array} api.ResponseFile "Files available"
-// @Failure 500 {object} api.ResponseError "Internal server error"
+// @Success 200 {object} api.ResponseFiles "Files available"
+// @Failure 500 {object} api.ResponseFiles "Internal server error"
 // @Router /files [get]
 func getFiles(c *gin.Context) {
 
-	var files []gin.H
+	var files []api.ResponseFileData
+	var error *api.ResponseErrorData
 
 	for objInfo := range listObjects() {
-		var url *url.URL
 		err := objInfo.Err
 
-		if err == nil {
-			url, err = getObjectUrl(objInfo.Key)
-		}
 		if err != nil {
-			files = append(files, gin.H{
-				"error":        err.Error(),
-				"fileID":       "",
-				"lastModified": "",
-				"url":          "",
-			})
+			error = &api.ResponseErrorData{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
+			}
+			break
 		} else {
-			files = append(files, gin.H{
-				"error":        err,
-				"fileID":       objInfo.Key,
-				"lastModified": objInfo.LastModified,
-				"url":          url.String(),
+			files = append(files, api.ResponseFileData{
+				FileID:       objInfo.Key,
+				LastModified: objInfo.LastModified,
 			})
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"data": files,
-	})
+	if error != nil {
+		c.JSON(http.StatusInternalServerError, api.ResponseFiles{Data: files, Error: error})
+	} else {
+		c.JSON(http.StatusOK, api.ResponseFiles{Data: files})
+	}
 }
