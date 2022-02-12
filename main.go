@@ -5,10 +5,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"github.com/sogno-platform/file-service/config"
 	"github.com/sogno-platform/file-service/routes"
 )
 
 func main() {
+	config.Init()
+
 	r := gin.Default()
 
 	r.GET("", func(c *gin.Context) {

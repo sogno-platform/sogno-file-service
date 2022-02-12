@@ -17,6 +17,14 @@ $ go build
 swag init
 ```
 
+### Configuring
+
+```bash
+# For example:
+mkdir -p ~/.config/sogno-file-service
+echo '{"minio_endpoint": "s3.amazonaws.com", "minio_bucket": "'$SOGNO_FILE_SERVICE_BUCKET'"}' > ~/.config/sogno-file-service/config.json
+```
+
 ### Running
 
 ```bash
