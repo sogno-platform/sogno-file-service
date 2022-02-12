@@ -239,17 +239,29 @@ func deleteFile(c *gin.Context) {
 func getFiles(c *gin.Context) {
 
 	var files []api.ResponseFileData
-	var error *api.ResponseErrorData
 
-	for objInfo := range listObjects() {
+	objInfoChan, err := listObjects()
+	if err != nil {
+		c.PureJSON(http.StatusInternalServerError, api.ResponseFiles{
+			Error: &api.ResponseErrorData{
+				Code:    http.StatusInternalServerError,
+				Message: err.Error(),
+			},
+		})
+		return
+	}
+	for objInfo := range objInfoChan {
 		err := objInfo.Err
 
 		if err != nil {
-			error = &api.ResponseErrorData{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			}
-			break
+			c.PureJSON(http.StatusInternalServerError, api.ResponseFiles{
+				Data: files,
+				Error: &api.ResponseErrorData{
+					Code:    http.StatusInternalServerError,
+					Message: err.Error(),
+				},
+			})
+			return
 		} else {
 			files = append(files, api.ResponseFileData{
 				FileID:       objInfo.Key,
@@ -257,9 +269,5 @@ func getFiles(c *gin.Context) {
 			})
 		}
 	}
-	if error != nil {
-		c.PureJSON(http.StatusInternalServerError, api.ResponseFiles{Data: files, Error: error})
-	} else {
-		c.PureJSON(http.StatusOK, api.ResponseFiles{Data: files})
-	}
+	c.PureJSON(http.StatusOK, api.ResponseFiles{Data: files})
 }

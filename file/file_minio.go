@@ -5,7 +5,6 @@ package file
 import (
 	"context"
 	"io"
-	"log"
 	"net/url"
 	"time"
 
@@ -15,7 +14,7 @@ import (
 	"github.com/sogno-platform/file-service/config"
 )
 
-func minioClient() *minio.Client {
+func minioClient() (*minio.Client, error) {
 	endpoint := config.GlobalConfig.MinIOEndpoint
 
 	creds := credentials.NewChainCredentials(
@@ -29,18 +28,18 @@ func minioClient() *minio.Client {
 		Creds:  creds,
 		Secure: true,
 	})
-	if err != nil {
-		// TODO: Return error
-		log.Fatalln(err)
-	}
-	return client
+	return client, err
 }
 
 func putObject(key string, content io.Reader, contentSize int64, contentType string) error {
 
 	bucket := config.GlobalConfig.MinIOBucket
 
-	_, err := minioClient().PutObject(
+	client, err := minioClient()
+	if err != nil {
+		return err
+	}
+	_, err = client.PutObject(
 		context.Background(),
 		bucket,
 		key,
@@ -53,32 +52,48 @@ func putObject(key string, content io.Reader, contentSize int64, contentType str
 
 func statObject(key string) (minio.ObjectInfo, error) {
 
+	client, err := minioClient()
+	if err != nil {
+		return minio.ObjectInfo{}, err
+	}
 	bucket := config.GlobalConfig.MinIOBucket
 
-	return minioClient().StatObject(context.Background(), bucket, key, minio.StatObjectOptions{})
+	return client.StatObject(context.Background(), bucket, key, minio.StatObjectOptions{})
 
 }
 
 func getObjectUrl(key string) (*url.URL, error) {
 
+	client, err := minioClient()
+	if err != nil {
+		return nil, err
+	}
 	bucket := config.GlobalConfig.MinIOBucket
 
 	// Generates a presigned url which expires in 7 days (max).
-	return minioClient().PresignedGetObject(context.Background(), bucket, key, time.Second*604800, make(url.Values))
+	return client.PresignedGetObject(context.Background(), bucket, key, time.Second*604800, make(url.Values))
 }
 
-func listObjects() <-chan minio.ObjectInfo {
+func listObjects() (<-chan minio.ObjectInfo, error) {
 
+	client, err := minioClient()
+	if err != nil {
+		return nil, err
+	}
 	bucket := config.GlobalConfig.MinIOBucket
 
-	return minioClient().ListObjects(context.Background(), bucket, minio.ListObjectsOptions{
+	return client.ListObjects(context.Background(), bucket, minio.ListObjectsOptions{
 		Recursive: true,
-	})
+	}), nil
 }
 
 func deleteObject(key string) error {
 
+	client, err := minioClient()
+	if err != nil {
+		return err
+	}
 	bucket := config.GlobalConfig.MinIOBucket
 
-	return minioClient().RemoveObject(context.Background(), bucket, key, minio.RemoveObjectOptions{})
+	return client.RemoveObject(context.Background(), bucket, key, minio.RemoveObjectOptions{})
 }
