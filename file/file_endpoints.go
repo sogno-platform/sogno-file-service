@@ -36,12 +36,7 @@ func addFile(c *gin.Context) {
 	fileID := uuid.New().String()
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
-		c.PureJSON(http.StatusBadRequest, api.ResponseError{
-			Error: api.ResponseErrorData{
-				Code:    http.StatusBadRequest,
-				Message: err.Error(),
-			},
-		})
+		api.ErrorJSON(c, http.StatusBadRequest, err)
 		return
 	}
 
@@ -49,12 +44,7 @@ func addFile(c *gin.Context) {
 	contentSize := fileHeader.Size
 	content, err := fileHeader.Open()
 	if err != nil {
-		c.PureJSON(http.StatusInternalServerError, api.ResponseError{
-			Error: api.ResponseErrorData{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			},
-		})
+		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
 	}
 	content.Close()
@@ -63,22 +53,12 @@ func addFile(c *gin.Context) {
 
 	url, err := getObjectUrl(fileID)
 	if err != nil {
-		c.PureJSON(http.StatusInternalServerError, api.ResponseError{
-			Error: api.ResponseErrorData{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			},
-		})
+		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
 	}
 	info, err := statObject(fileID)
 	if err != nil {
-		c.PureJSON(http.StatusInternalServerError, api.ResponseError{
-			Error: api.ResponseErrorData{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			},
-		})
+		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.PureJSON(http.StatusOK, api.ResponseFile{
@@ -105,32 +85,18 @@ func getFile(c *gin.Context) {
 
 	fileID := c.Param("fileID")
 	info, err := statObject(fileID)
-	if errors.As(err, &NoSuchKeyError{}) {
-		c.PureJSON(http.StatusNotFound, api.ResponseError{
-			Error: api.ResponseErrorData{
-				Code:    http.StatusNotFound,
-				Message: err.Error(),
-			},
-		})
+	var noSuchKeyError *NoSuchKeyError
+	if errors.As(err, &noSuchKeyError) {
+		api.ErrorJSON(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
-		c.PureJSON(http.StatusInternalServerError, api.ResponseError{
-			Error: api.ResponseErrorData{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			},
-		})
+		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
 	}
 	url, err := getObjectUrl(fileID)
 	if err != nil {
-		c.PureJSON(http.StatusInternalServerError, api.ResponseError{
-			Error: api.ResponseErrorData{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			},
-		})
+		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.PureJSON(http.StatusOK, api.ResponseFile{
@@ -160,33 +126,19 @@ func updateFile(c *gin.Context) {
 	fileID := c.Param("fileID")
 	fileHeader, err := c.FormFile("file")
 	if err != nil {
-		c.PureJSON(http.StatusBadRequest, api.ResponseError{
-			Error: api.ResponseErrorData{
-				Code:    http.StatusBadRequest,
-				Message: err.Error(),
-			},
-		})
+		api.ErrorJSON(c, http.StatusBadRequest, err)
 		return
 	}
 
 	// Check if the file exists
 	info, err := statObject(fileID)
-	if errors.As(err, &NoSuchKeyError{}) {
-		c.PureJSON(http.StatusNotFound, api.ResponseError{
-			Error: api.ResponseErrorData{
-				Code:    http.StatusNotFound,
-				Message: err.Error(),
-			},
-		})
+	var noSuchKeyError *NoSuchKeyError
+	if errors.As(err, &noSuchKeyError) {
+		api.ErrorJSON(c, http.StatusNotFound, err)
 		return
 	}
 	if err != nil {
-		c.PureJSON(http.StatusInternalServerError, api.ResponseError{
-			Error: api.ResponseErrorData{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			},
-		})
+		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
 	}
 
@@ -194,12 +146,7 @@ func updateFile(c *gin.Context) {
 	contentSize := fileHeader.Size
 	content, err := fileHeader.Open()
 	if err != nil {
-		c.PureJSON(http.StatusInternalServerError, api.ResponseError{
-			Error: api.ResponseErrorData{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			},
-		})
+		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
 	}
 	content.Close()
@@ -208,22 +155,12 @@ func updateFile(c *gin.Context) {
 
 	url, err := getObjectUrl(fileID)
 	if err != nil {
-		c.PureJSON(http.StatusInternalServerError, api.ResponseError{
-			Error: api.ResponseErrorData{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			},
-		})
+		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
 	}
 	info, err = statObject(fileID)
 	if err != nil {
-		c.PureJSON(http.StatusInternalServerError, api.ResponseError{
-			Error: api.ResponseErrorData{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			},
-		})
+		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.PureJSON(http.StatusOK, api.ResponseFile{
@@ -249,12 +186,7 @@ func deleteFile(c *gin.Context) {
 	err := deleteObject(c.Param("fileID"))
 
 	if err != nil {
-		c.PureJSON(http.StatusInternalServerError, api.ResponseError{
-			Error: api.ResponseErrorData{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			},
-		})
+		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
 	}
 	c.PureJSON(http.StatusOK, api.ResponseEmpty{})
@@ -274,25 +206,14 @@ func getFiles(c *gin.Context) {
 
 	objInfoChan, err := listObjects()
 	if err != nil {
-		c.PureJSON(http.StatusInternalServerError, api.ResponseFiles{
-			Error: &api.ResponseErrorData{
-				Code:    http.StatusInternalServerError,
-				Message: err.Error(),
-			},
-		})
+		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
 	}
 	for objInfo := range objInfoChan {
 		err := objInfo.Err
 
 		if err != nil {
-			c.PureJSON(http.StatusInternalServerError, api.ResponseFiles{
-				Data: files,
-				Error: &api.ResponseErrorData{
-					Code:    http.StatusInternalServerError,
-					Message: err.Error(),
-				},
-			})
+			api.ErrorJSON(c, http.StatusInternalServerError, err)
 			return
 		} else {
 			files = append(files, api.ResponseFileData{

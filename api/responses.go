@@ -4,6 +4,8 @@ package api
 
 import (
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 type ResponseErrorData struct {
@@ -42,4 +44,13 @@ type ResponseFiles struct {
 // @Description Empty successful response
 type ResponseEmpty struct {
 	Data struct{} `json:"data" validate:"required"`
+}
+
+func ErrorJSON(c *gin.Context, code int, err error) {
+	c.PureJSON(code, ResponseError{
+		Error: ResponseErrorData{
+			Code:    code,
+			Message: err.Error(),
+		},
+	})
 }
