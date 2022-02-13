@@ -30,3 +30,9 @@ echo '{"minio_endpoint": "s3.amazonaws.com", "minio_bucket": "'$SOGNO_FILE_SERVI
 ```bash
 go run main.go
 ```
+
+### Documentation
+
+Visit localhost:8080 in your web browser to view the HTML version of
+the API documentation. You can also view `docs/swagger.yaml` in the
+repo.
