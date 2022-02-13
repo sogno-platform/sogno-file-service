@@ -3,6 +3,7 @@
 package file
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -103,7 +104,16 @@ func addFile(c *gin.Context) {
 func getFile(c *gin.Context) {
 
 	fileID := c.Param("fileID")
-	url, err := getObjectUrl(fileID)
+	info, err := statObject(fileID)
+	if errors.As(err, &NoSuchKeyError{}) {
+		c.PureJSON(http.StatusNotFound, api.ResponseError{
+			Error: api.ResponseErrorData{
+				Code:    http.StatusNotFound,
+				Message: err.Error(),
+			},
+		})
+		return
+	}
 	if err != nil {
 		c.PureJSON(http.StatusInternalServerError, api.ResponseError{
 			Error: api.ResponseErrorData{
@@ -113,7 +123,7 @@ func getFile(c *gin.Context) {
 		})
 		return
 	}
-	info, err := statObject(fileID)
+	url, err := getObjectUrl(fileID)
 	if err != nil {
 		c.PureJSON(http.StatusInternalServerError, api.ResponseError{
 			Error: api.ResponseErrorData{
@@ -140,6 +150,7 @@ func getFile(c *gin.Context) {
 // @Accept multipart/form-data
 // @Success 200 {object} api.ResponseFile "File that was updated"
 // @Failure 400 {object} api.ResponseError "Bad request"
+// @Failure 404 {object} api.ResponseError "File not found"
 // @Failure 500 {object} api.ResponseError "Internal server error"
 // @Param fileID path string true "ID of file"
 // @Param file formData file true "File to be uploaded"
@@ -152,6 +163,27 @@ func updateFile(c *gin.Context) {
 		c.PureJSON(http.StatusBadRequest, api.ResponseError{
 			Error: api.ResponseErrorData{
 				Code:    http.StatusBadRequest,
+				Message: err.Error(),
+			},
+		})
+		return
+	}
+
+	// Check if the file exists
+	info, err := statObject(fileID)
+	if errors.As(err, &NoSuchKeyError{}) {
+		c.PureJSON(http.StatusNotFound, api.ResponseError{
+			Error: api.ResponseErrorData{
+				Code:    http.StatusNotFound,
+				Message: err.Error(),
+			},
+		})
+		return
+	}
+	if err != nil {
+		c.PureJSON(http.StatusInternalServerError, api.ResponseError{
+			Error: api.ResponseErrorData{
+				Code:    http.StatusInternalServerError,
 				Message: err.Error(),
 			},
 		})
@@ -184,7 +216,7 @@ func updateFile(c *gin.Context) {
 		})
 		return
 	}
-	info, err := statObject(fileID)
+	info, err = statObject(fileID)
 	if err != nil {
 		c.PureJSON(http.StatusInternalServerError, api.ResponseError{
 			Error: api.ResponseErrorData{

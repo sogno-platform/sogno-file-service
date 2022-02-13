@@ -14,6 +14,14 @@ import (
 	"github.com/sogno-platform/file-service/config"
 )
 
+type NoSuchKeyError struct {
+	Message string
+}
+
+func (e *NoSuchKeyError) Error() string {
+	return e.Message
+}
+
 func minioClient() (*minio.Client, error) {
 	endpoint := config.GlobalConfig.MinIOEndpoint
 
@@ -58,8 +66,13 @@ func statObject(key string) (minio.ObjectInfo, error) {
 	}
 	bucket := config.GlobalConfig.MinIOBucket
 
-	return client.StatObject(context.Background(), bucket, key, minio.StatObjectOptions{})
+	info, err := client.StatObject(context.Background(), bucket, key, minio.StatObjectOptions{})
 
+	if minio.ToErrorResponse(err).Code == "NoSuchKey" {
+		return info, &NoSuchKeyError{Message: err.Error()}
+	} else {
+		return info, err
+	}
 }
 
 func getObjectUrl(key string) (*url.URL, error) {

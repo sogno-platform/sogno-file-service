@@ -171,6 +171,12 @@ const docTemplate_swagger = `{
                             "$ref": "#/definitions/api.ResponseError"
                         }
                     },
+                    "404": {
+                        "description": "File not found",
+                        "schema": {
+                            "$ref": "#/definitions/api.ResponseError"
+                        }
+                    },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
