@@ -66,7 +66,7 @@ info:
 paths:
   /files:
     get:
-      operationId: getFiles
+      operationId: GetFiles
       produces:
       - application/json
       responses:
@@ -84,7 +84,7 @@ paths:
     post:
       consumes:
       - multipart/form-data
-      operationId: addFile
+      operationId: AddFile
       parameters:
       - description: File to be uploaded
         in: formData
@@ -111,7 +111,7 @@ paths:
       - files
   /files/{fileID}:
     delete:
-      operationId: deleteFile
+      operationId: DeleteFile
       parameters:
       - description: ID of file
         in: path
@@ -133,7 +133,7 @@ paths:
       tags:
       - files
     get:
-      operationId: getFile
+      operationId: GetFile
       parameters:
       - description: ID of file
         in: path
@@ -165,7 +165,7 @@ paths:
     put:
       consumes:
       - multipart/form-data
-      operationId: updateFile
+      operationId: UpdateFile
       parameters:
       - description: ID of file
         in: path

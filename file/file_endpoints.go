@@ -4,25 +4,43 @@ package file
 
 import (
 	"errors"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 
 	"github.com/sogno-platform/file-service/api"
+	"github.com/sogno-platform/file-service/config"
 )
 
 func RegisterFileEndpoints(r *gin.RouterGroup) {
-	r.GET("", getFiles)
-	r.POST("", addFile)
-	r.GET("/:fileID", getFile)
-	r.PUT("/:fileID", updateFile)
-	r.DELETE("/:fileID", deleteFile)
+	controller, err := NewFileController()
+	if err != nil {
+		log.Fatalln(err)
+	}
+	r.GET("", controller.GetFiles)
+	r.POST("", controller.AddFile)
+	r.GET("/:fileID", controller.GetFile)
+	r.PUT("/:fileID", controller.UpdateFile)
+	r.DELETE("/:fileID", controller.DeleteFile)
 }
 
-// addFile godoc
+type FileController struct {
+	Bucket   string
+	ObjStore *MinIOClient
+}
+
+func NewFileController() (*FileController, error) {
+	endpoint := config.GlobalConfig.MinIOEndpoint
+	bucket := config.GlobalConfig.MinIOBucket
+	client, err := NewMinIOClient(endpoint)
+	return &FileController{Bucket: bucket, ObjStore: client}, err
+}
+
+// AddFile godoc
 // @Summary Add file
-// @ID addFile
+// @ID AddFile
 // @Tags files
 // @Produce json
 // @Accept multipart/form-data
@@ -31,7 +49,7 @@ func RegisterFileEndpoints(r *gin.RouterGroup) {
 // @Failure 500 {object} api.ResponseError "Internal server error"
 // @Param file formData file true "File to be uploaded"
 // @Router /files [post]
-func addFile(c *gin.Context) {
+func (f *FileController) AddFile(c *gin.Context) {
 
 	fileID := uuid.New().String()
 	fileHeader, err := c.FormFile("file")
@@ -49,14 +67,14 @@ func addFile(c *gin.Context) {
 	}
 	content.Close()
 
-	putObject(fileID, content, contentSize, contentType)
+	f.ObjStore.PutObject(f.Bucket, fileID, content, contentSize, contentType)
 
-	url, err := getObjectUrl(fileID)
+	url, err := f.ObjStore.GetObjectUrl(f.Bucket, fileID)
 	if err != nil {
 		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
 	}
-	info, err := statObject(fileID)
+	info, err := f.ObjStore.StatObject(f.Bucket, fileID)
 	if err != nil {
 		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
@@ -70,9 +88,9 @@ func addFile(c *gin.Context) {
 	})
 }
 
-// getFile godoc
+// GetFile godoc
 // @Summary Get file info
-// @ID getFile
+// @ID GetFile
 // @Tags files
 // @Produce json
 // @Success 200 {object} api.ResponseFile "File info"
@@ -81,10 +99,10 @@ func addFile(c *gin.Context) {
 // @Failure 500 {object} api.ResponseError "Internal server error"
 // @Param fileID path string true "ID of file"
 // @Router /files/{fileID} [get]
-func getFile(c *gin.Context) {
+func (f *FileController) GetFile(c *gin.Context) {
 
 	fileID := c.Param("fileID")
-	info, err := statObject(fileID)
+	info, err := f.ObjStore.StatObject(f.Bucket, fileID)
 	var noSuchKeyError *NoSuchKeyError
 	if errors.As(err, &noSuchKeyError) {
 		api.ErrorJSON(c, http.StatusNotFound, err)
@@ -94,7 +112,7 @@ func getFile(c *gin.Context) {
 		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
 	}
-	url, err := getObjectUrl(fileID)
+	url, err := f.ObjStore.GetObjectUrl(f.Bucket, fileID)
 	if err != nil {
 		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
@@ -108,9 +126,9 @@ func getFile(c *gin.Context) {
 	})
 }
 
-// updateFile godoc
+// UpdateFile godoc
 // @Summary Update file
-// @ID updateFile
+// @ID UpdateFile
 // @Tags files
 // @Produce json
 // @Accept multipart/form-data
@@ -121,7 +139,7 @@ func getFile(c *gin.Context) {
 // @Param fileID path string true "ID of file"
 // @Param file formData file true "File to be uploaded"
 // @Router /files/{fileID} [put]
-func updateFile(c *gin.Context) {
+func (f *FileController) UpdateFile(c *gin.Context) {
 
 	fileID := c.Param("fileID")
 	fileHeader, err := c.FormFile("file")
@@ -131,7 +149,7 @@ func updateFile(c *gin.Context) {
 	}
 
 	// Check if the file exists
-	info, err := statObject(fileID)
+	info, err := f.ObjStore.StatObject(f.Bucket, fileID)
 	var noSuchKeyError *NoSuchKeyError
 	if errors.As(err, &noSuchKeyError) {
 		api.ErrorJSON(c, http.StatusNotFound, err)
@@ -151,14 +169,14 @@ func updateFile(c *gin.Context) {
 	}
 	content.Close()
 
-	putObject(fileID, content, contentSize, contentType)
+	f.ObjStore.PutObject(f.Bucket, fileID, content, contentSize, contentType)
 
-	url, err := getObjectUrl(fileID)
+	url, err := f.ObjStore.GetObjectUrl(f.Bucket, fileID)
 	if err != nil {
 		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
 	}
-	info, err = statObject(fileID)
+	info, err = f.ObjStore.StatObject(f.Bucket, fileID)
 	if err != nil {
 		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return
@@ -172,18 +190,18 @@ func updateFile(c *gin.Context) {
 	})
 }
 
-// deleteFile godoc
+// DeleteFile godoc
 // @Summary Delete file
-// @ID deleteFile
+// @ID DeleteFile
 // @Tags files
 // @Produce json
 // @Success 200 {object} api.ResponseEmpty "Succeeds whether the file exists or not"
 // @Failure 500 {object} api.ResponseError "Internal server error"
 // @Param fileID path string true "ID of file"
 // @Router /files/{fileID} [delete]
-func deleteFile(c *gin.Context) {
+func (f *FileController) DeleteFile(c *gin.Context) {
 
-	err := deleteObject(c.Param("fileID"))
+	err := f.ObjStore.DeleteObject(f.Bucket, c.Param("fileID"))
 
 	if err != nil {
 		api.ErrorJSON(c, http.StatusInternalServerError, err)
@@ -192,19 +210,19 @@ func deleteFile(c *gin.Context) {
 	c.PureJSON(http.StatusOK, api.ResponseEmpty{})
 }
 
-// getFiles godoc
+// GetFiles godoc
 // @Summary Get all files on the server
-// @ID getFiles
+// @ID GetFiles
 // @Tags files
 // @Produce json
 // @Success 200 {object} api.ResponseFiles "Files available"
 // @Failure 500 {object} api.ResponseFiles "Internal server error"
 // @Router /files [get]
-func getFiles(c *gin.Context) {
+func (f *FileController) GetFiles(c *gin.Context) {
 
 	var files []api.ResponseFileData
 
-	objInfoChan, err := listObjects()
+	objInfoChan, err := f.ObjStore.ListObjects(f.Bucket)
 	if err != nil {
 		api.ErrorJSON(c, http.StatusInternalServerError, err)
 		return

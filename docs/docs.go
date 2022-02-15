@@ -25,7 +25,7 @@ const docTemplate_swagger = `{
                     "files"
                 ],
                 "summary": "Get all files on the server",
-                "operationId": "getFiles",
+                "operationId": "GetFiles",
                 "responses": {
                     "200": {
                         "description": "Files available",
@@ -52,7 +52,7 @@ const docTemplate_swagger = `{
                     "files"
                 ],
                 "summary": "Add file",
-                "operationId": "addFile",
+                "operationId": "AddFile",
                 "parameters": [
                     {
                         "type": "file",
@@ -93,7 +93,7 @@ const docTemplate_swagger = `{
                     "files"
                 ],
                 "summary": "Get file info",
-                "operationId": "getFile",
+                "operationId": "GetFile",
                 "parameters": [
                     {
                         "type": "string",
@@ -141,7 +141,7 @@ const docTemplate_swagger = `{
                     "files"
                 ],
                 "summary": "Update file",
-                "operationId": "updateFile",
+                "operationId": "UpdateFile",
                 "parameters": [
                     {
                         "type": "string",
@@ -193,7 +193,7 @@ const docTemplate_swagger = `{
                     "files"
                 ],
                 "summary": "Delete file",
-                "operationId": "deleteFile",
+                "operationId": "DeleteFile",
                 "parameters": [
                     {
                         "type": "string",

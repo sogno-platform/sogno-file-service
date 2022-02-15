@@ -36,3 +36,12 @@ go run main.go
 Visit localhost:8080 in your web browser to view the HTML version of
 the API documentation. You can also view `docs/swagger.yaml` in the
 repo.
+
+### Testing
+
+Currently, the only tests are integration tests and they require a running
+S3-compatible object storage server.
+
+```bash
+go test
+```
