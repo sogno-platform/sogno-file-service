@@ -14,56 +14,169 @@ import (
 	"time"
 
 	"github.com/stretchr/testify/assert"
+
+	"github.com/sogno-platform/file-service/api"
 )
 
-func TestAddFile(t *testing.T) {
-	justNow := time.Now()
-
-	router := setupRouter()
-	w := httptest.NewRecorder()
-
-	originalBody := "a|b\n1|2\n"
+func addFileRequest(contents string) *http.Request {
 	body := &bytes.Buffer{}
 	writer := multipart.NewWriter(body)
 	part, _ := writer.CreateFormFile("file", "test.csv")
-	io.Copy(part, bytes.NewBufferString(originalBody))
+	io.Copy(part, bytes.NewBufferString(contents))
 	writer.Close()
 
 	req, _ := http.NewRequest("POST", "/api/files", body)
 	req.Header.Add("Content-Type", writer.FormDataContentType())
+	return req
+}
+
+func TestAddFile(t *testing.T) {
+	router := setupRouter()
+	w := httptest.NewRecorder()
+	justNow := time.Now()
+	origFileContents := "a|b\n1|2\n"
+	req := addFileRequest(origFileContents)
 	router.ServeHTTP(w, req)
 
-	var resBody map[string]map[string]string
+	// Assert
+	var resBody *api.ResponseFile
 	json.Unmarshal([]byte(w.Body.String()), &resBody)
 
 	assert.Equal(t, 200, w.Code)
-	data, contains := resBody["data"]
-	assert.True(t, contains)
-
-	fileID, _ := data["fileID"]
+	fileID := resBody.Data.FileID
 	assert.NotEqual(t, "", fileID)
 
-	lastModified, _ := data["lastModified"]
-	lastModifiedDT, _ := time.Parse(time.RFC3339, lastModified)
-	assert.True(t, lastModifiedDT.After(justNow))
+	lastModified := resBody.Data.LastModified
+	assert.True(t, lastModified.After(justNow))
 
-	url, _ := data["url"]
+	url := resBody.Data.URL
 	res, _ := http.Get(url)
-	actualBody, _ := ioutil.ReadAll(res.Body)
+	actualFileContents, _ := ioutil.ReadAll(res.Body)
 	res.Body.Close()
-	assert.Equal(t, originalBody, string(actualBody))
+	assert.Equal(t, origFileContents, string(actualFileContents))
 
 	// Let's add the same file again and make sure the IDs are not the same
 	w = httptest.NewRecorder()
 	router.ServeHTTP(w, req)
 
-	var newResBody map[string]map[string]string
+	var newResBody *api.ResponseFile
 	json.Unmarshal([]byte(w.Body.String()), &newResBody)
 
 	assert.Equal(t, 200, w.Code)
-	data, contains = newResBody["data"]
-	assert.True(t, contains)
-
-	newFileID, _ := data["fileID"]
+	newFileID := newResBody.Data.FileID
 	assert.NotEqual(t, fileID, newFileID)
+}
+
+func TestGetFile(t *testing.T) {
+	// Add a file
+	router := setupRouter()
+	w := httptest.NewRecorder()
+	origFileContents := "a|b\n1|2\n"
+	req := addFileRequest(origFileContents)
+	router.ServeHTTP(w, req)
+
+	var addFileRes *api.ResponseFile
+	json.Unmarshal([]byte(w.Body.String()), &addFileRes)
+	fileID := addFileRes.Data.FileID
+
+	// Get that file
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/api/files/" + fileID, nil)
+	router.ServeHTTP(w, req)
+
+	// Assert
+	var getFileRes *api.ResponseFile
+	json.Unmarshal([]byte(w.Body.String()), &getFileRes)
+
+	assert.Equal(t, 200, w.Code)
+
+	url := getFileRes.Data.URL
+	res, _ := http.Get(url)
+	actualFileContents, _ := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	assert.Equal(t, origFileContents, string(actualFileContents))
+}
+
+func TestUpdateFile(t *testing.T) {
+	// Add a file
+	router := setupRouter()
+	w := httptest.NewRecorder()
+	origFileContents := "a|b\n1|2\n"
+	req := addFileRequest(origFileContents)
+	router.ServeHTTP(w, req)
+
+	var addFileRes *api.ResponseFile
+	json.Unmarshal([]byte(w.Body.String()), &addFileRes)
+	fileID := addFileRes.Data.FileID
+
+	// Update that file
+	w = httptest.NewRecorder()
+	newFileContents := "c|d\n3|4\n"
+	body := &bytes.Buffer{}
+	writer := multipart.NewWriter(body)
+	part, _ := writer.CreateFormFile("file", "test.csv")
+	io.Copy(part, bytes.NewBufferString(newFileContents))
+	writer.Close()
+
+	req, _ = http.NewRequest("PUT", "/api/files/" + fileID, body)
+	req.Header.Add("Content-Type", writer.FormDataContentType())
+	router.ServeHTTP(w, req)
+
+	// Assert
+	var updateFileRes *api.ResponseFile
+	json.Unmarshal([]byte(w.Body.String()), &updateFileRes)
+
+	assert.Equal(t, 200, w.Code)
+	url := updateFileRes.Data.URL
+	res, _ := http.Get(url)
+	actualFileContents, _ := ioutil.ReadAll(res.Body)
+	res.Body.Close()
+	assert.Equal(t, newFileContents, string(actualFileContents))
+}
+
+func TestDeleteFile(t *testing.T) {
+	// Add a file
+	router := setupRouter()
+	w := httptest.NewRecorder()
+	origFileContents := "a|b\n1|2\n"
+	req := addFileRequest(origFileContents)
+	router.ServeHTTP(w, req)
+
+	var addFileRes *api.ResponseFile
+	json.Unmarshal([]byte(w.Body.String()), &addFileRes)
+	fileID := addFileRes.Data.FileID
+
+	// Delete that file
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("DELETE", "/api/files/" + fileID, nil)
+	router.ServeHTTP(w, req)
+
+	// Try to get it again
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/api/files/" + fileID, nil)
+	router.ServeHTTP(w, req)
+
+	// Assert
+	assert.Equal(t, 404, w.Code)
+}
+
+func TestListFiles(t *testing.T) {
+	// Add a file
+	router := setupRouter()
+	w := httptest.NewRecorder()
+	origFileContents := "a|b\n1|2\n"
+	req := addFileRequest(origFileContents)
+	router.ServeHTTP(w, req)
+
+	// List files
+	w = httptest.NewRecorder()
+	req, _ = http.NewRequest("GET", "/api/files", nil)
+	router.ServeHTTP(w, req)
+
+	// Assert
+	var resBody *api.ResponseFiles
+	json.Unmarshal([]byte(w.Body.String()), &resBody)
+
+	assert.Equal(t, 200, w.Code)
+	assert.True(t, len(resBody.Data) >= 1)
 }
