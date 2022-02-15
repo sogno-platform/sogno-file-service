@@ -81,7 +81,7 @@ func TestGetFile(t *testing.T) {
 
 	// Get that file
 	w = httptest.NewRecorder()
-	req, _ = http.NewRequest("GET", "/api/files/" + fileID, nil)
+	req, _ = http.NewRequest("GET", "/api/files/"+fileID, nil)
 	router.ServeHTTP(w, req)
 
 	// Assert
@@ -118,7 +118,7 @@ func TestUpdateFile(t *testing.T) {
 	io.Copy(part, bytes.NewBufferString(newFileContents))
 	writer.Close()
 
-	req, _ = http.NewRequest("PUT", "/api/files/" + fileID, body)
+	req, _ = http.NewRequest("PUT", "/api/files/"+fileID, body)
 	req.Header.Add("Content-Type", writer.FormDataContentType())
 	router.ServeHTTP(w, req)
 
@@ -148,12 +148,12 @@ func TestDeleteFile(t *testing.T) {
 
 	// Delete that file
 	w = httptest.NewRecorder()
-	req, _ = http.NewRequest("DELETE", "/api/files/" + fileID, nil)
+	req, _ = http.NewRequest("DELETE", "/api/files/"+fileID, nil)
 	router.ServeHTTP(w, req)
 
 	// Try to get it again
 	w = httptest.NewRecorder()
-	req, _ = http.NewRequest("GET", "/api/files/" + fileID, nil)
+	req, _ = http.NewRequest("GET", "/api/files/"+fileID, nil)
 	router.ServeHTTP(w, req)
 
 	// Assert
