@@ -10,6 +10,16 @@ $ go mod tidy
 $ go build
 ```
 
+### Docker build / run
+
+The docker build uses the file "minio.config" to store the s3 details.
+You will need to make sure this matches your setup.
+
+```bash
+$ docker build -t sogno-file-service .
+$ docker run -p 8080:8080 sogno-file-service
+```
+
 ### Generating OpenAPI docs
 
 ```bash
