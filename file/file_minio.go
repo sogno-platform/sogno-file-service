@@ -34,7 +34,7 @@ func NewMinIOClient(endpoint string) (*MinIOClient, error) {
 	)
 	client, err := minio.New(endpoint, &minio.Options{
 		Creds:  creds,
-		Secure: true,
+		Secure: false, // TODO: generate certificates and enable https
 	})
 	return &MinIOClient{Client: client}, err
 }
@@ -47,7 +47,7 @@ func (c *MinIOClient) PutObject(bucket string, key string, content io.Reader, co
 		key,
 		content,
 		contentSize,
-		minio.PutObjectOptions{ContentType: contentType},
+		minio.PutObjectOptions{ContentType: contentType, ContentDisposition: "filename=" + key + ".zip"},
 	)
 	return err
 }
